@@ -1,8 +1,10 @@
+#!/bin/bash
+
 set -e
 set -u
 set -o pipefail
 
-MYSQL="sudo mysql"
+MYSQL="sudo /usr/bin/mysql"
 URL="https://coinmarketcap.com/currencies/bitcoin/"
 DB="btc_price_tracker_db"
 
