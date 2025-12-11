@@ -63,6 +63,26 @@ NR==1 {print $0",low_change"; next}
     prev=$3
 }' "$CSV_WEEK" > btc_low_change_rate.csv
 
+#calculate the % difference from 24h high
+awk -F',' '
+NR==1 {print $0",pct_from_high"; next}
+{
+    print $0","(($2 - $4) / $4 * 100)
+}' "$CSV_5PM" > btc_pct_from_high.csv
+
+#calculate the % difference from 24h low
+awk -F',' '
+NR==1 {print $0",pct_from_low"; next}
+{
+    print $0","(($2 - $3) / $3 * 100)
+}' "$CSV_5PM" > btc_pct_from_low.csv
+
+#calculate the high low spread
+awk -F',' '
+NR==1 {print $0",spread"; next}
+{
+    print $0","($4 - $3)
+}' "$CSV_WEEK" > btc_spread.csv
 
 #gnuplot
 plot_graph() {
@@ -110,5 +130,14 @@ plot_graph "btc_low_change_rate.csv" "6_low_change_rate.png" "BTC 24h Low Change
 
 #graph 7 btc 24h average
 plot_graph "$CSV_AVG" "7_24h_average.png" "BTC 24h Average Price" "Average Price (USD)" 2
+
+#graph 8 btc %price differnce from 24h high
+plot_graph "btc_pct_from_high.csv" "8_percentage_from_high.png" "BTC % Difference from 24h High (5PM)" "Percentage (%)" 5
+
+#graph 9 btc %price difference from 24h low
+plot_graph "btc_pct_from_low.csv" "9_percantage_from_low.png" "BTC % Difference from 24h Low (5PM)" "Percentage (%)" 5
+
+#graph 10 btc pricehigh low spread
+plot_graph "btc_spread.csv" "10_highlow_spread.png" "BTC High–Low Spread Over a Week" "Spread (USD)" 5
 
 echo "Done"
