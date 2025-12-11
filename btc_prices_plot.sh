@@ -24,6 +24,15 @@ GROUP BY day
 ORDER BY day;
 " | sed 's/\t/,/g' > "$CSV_WEEK"
 
+#Export the 24h average of each day
+CSV_AVG="./btc_24h_average.csv"
+$MYSQL -D $DB -B -e "
+SELECT DATE(timestamp) AS day, AVG(price) AS avg_24h
+FROM BTC_PRICES
+GROUP BY day
+ORDER BY day;
+" | sed 's/\t/,/g' > "$CSV_AVG"
+
 #calculate price change rate
 awk -F',' '
 NR==1 {print $0",change_rate"; next}
@@ -33,6 +42,27 @@ NR==1 {print $0",change_rate"; next}
     print $0","rate
     prev=$2
 }' "$CSV_5PM" > btc_change_rate.csv
+
+#calculate the 24h high price change rate
+awk -F',' '
+NR==1 {print $0",high_change"; next}
+{
+    if (NR==2) {print $0",0"; prev=$4; next}
+    rate = ($4 - prev) / prev * 100
+    print $0","rate
+    prev=$4
+}' "$CSV_WEEK" > btc_high_change_rate.csv
+
+#calculate the 24h low price change rate
+awk -F',' '
+NR==1 {print $0",low_change"; next}
+{
+    if (NR==2) {print $0",0"; prev=$3; next}
+    rate = ($3 - prev) / prev * 100
+    print $0","rate
+    prev=$3
+}' "$CSV_WEEK" > btc_low_change_rate.csv
+
 
 #gnuplot
 plot_graph() {
@@ -72,5 +102,13 @@ plot_graph "$CSV_WEEK" "3_24h_high_week.png" "BTC 24h High Over a Week" "High (U
 #graph 4 btc 24h low
 plot_graph "$CSV_WEEK" "4_24h_low_week.png" "BTC 24h Low Over a Week" "Low (USD)" 3
 
-echo "Done"
+#graph 5 btc 24h high change rate
+plot_graph "btc_high_change_rate.csv" "5_high_change_rate.png" "BTC 24h High Change Rate at 5PM (%)" "Percentage (%)" 5
 
+#graph 6 btc 24h low change rate
+plot_graph "btc_low_change_rate.csv" "6_low_change_rate.png" "BTC 24h Low Change Rate at 5PM (%)" "Percentage (%)" 5
+
+#graph 7 btc 24h average
+plot_graph "$CSV_AVG" "7_24h_average.png" "BTC 24h Average Price" "Average Price (USD)" 2
+
+echo "Done"
